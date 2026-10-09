@@ -28,6 +28,14 @@ VERIFY_ITEMS: List[str] = [
 ]
 
 
+@dataclass(frozen=True)
+class ResponseDraft:
+    """Keep customer-facing content separate from internal-only information."""
+
+    customer_reply: str
+    internal_checklist: str
+
+
 def build_english_reply(inquiry: Inquiry) -> str:
     return f"""Subject: Re: Your Rental Inquiry - {inquiry.property_name}
 
@@ -82,7 +90,7 @@ def build_internal_checklist(inquiry: Inquiry) -> str:
     return "\n".join(lines)
 
 
-def generate_response(inquiry: Inquiry) -> str:
+def generate_response(inquiry: Inquiry) -> ResponseDraft:
     if inquiry.inquiry_language not in {"ja", "en"}:
         raise ValueError("inquiry_language must be 'ja' or 'en'")
 
@@ -92,11 +100,10 @@ def generate_response(inquiry: Inquiry) -> str:
         else build_english_reply(inquiry)
     )
 
-    return f"""=== PRIMARY REPLY ===
-{primary_reply}
-=== INTERNAL CHECKLIST ===
-{build_internal_checklist(inquiry)}
-"""
+    return ResponseDraft(
+        customer_reply=primary_reply,
+        internal_checklist=build_internal_checklist(inquiry),
+    )
 
 
 if __name__ == "__main__":
@@ -111,4 +118,9 @@ if __name__ == "__main__":
         notes="Fictional test data only. Do not treat availability or lease conditions as confirmed.",
     )
 
-    print(generate_response(sample))
+    draft = generate_response(sample)
+    print("=== CUSTOMER REPLY ===")
+    print(draft.customer_reply)
+    print("=== INTERNAL CHECKLIST (DO NOT SEND) ===")
+    print(draft.internal_checklist)
+

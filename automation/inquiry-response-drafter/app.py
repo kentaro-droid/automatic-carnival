@@ -74,10 +74,24 @@ class InquiryResponseApp(tk.Tk):
 
         form.columnconfigure(0, weight=1)
 
-        ttk.Label(output, text="Generated draft", font=("TkDefaultFont", 11, "bold")).pack(anchor="w")
+        ttk.Label(output, text="Customer reply / 顧客向け返信", font=("TkDefaultFont", 11, "bold")).pack(anchor="w")
         self.result = tk.Text(output, wrap="word", undo=True)
         self.result.pack(fill="both", expand=True, pady=(6, 8))
         ttk.Button(output, text="Copy to Clipboard", command=self.copy_result).pack(anchor="e")
+        ttk.Label(output, text="Copies customer reply only / 顧客向け返信のみコピー").pack(anchor="e")
+
+        ttk.Label(
+            output,
+            text="Internal checklist & notes — DO NOT SEND / 社内確認事項・送信不可",
+            font=("TkDefaultFont", 11, "bold"),
+        ).pack(anchor="w", pady=(12, 0))
+        internal_frame = ttk.Frame(output)
+        internal_frame.pack(fill="both", expand=True, pady=(6, 0))
+        self.internal_result = tk.Text(internal_frame, wrap="word", height=12, state="disabled")
+        internal_scroll = ttk.Scrollbar(internal_frame, command=self.internal_result.yview)
+        self.internal_result.configure(yscrollcommand=internal_scroll.set)
+        internal_scroll.pack(side="right", fill="y")
+        self.internal_result.pack(side="left", fill="both", expand=True)
 
     def generate(self):
         required = {
@@ -110,7 +124,14 @@ class InquiryResponseApp(tk.Tk):
             return
 
         self.result.delete("1.0", "end")
-        self.result.insert("1.0", draft)
+        self.result.insert("1.0", draft.customer_reply)
+        self.set_internal_result(draft.internal_checklist)
+
+    def set_internal_result(self, text):
+        self.internal_result.configure(state="normal")
+        self.internal_result.delete("1.0", "end")
+        self.internal_result.insert("1.0", text)
+        self.internal_result.configure(state="disabled")
 
     def copy_result(self):
         text = self.result.get("1.0", "end").strip()
@@ -129,7 +150,9 @@ class InquiryResponseApp(tk.Tk):
         self.requirements.delete("1.0", "end")
         self.notes.delete("1.0", "end")
         self.result.delete("1.0", "end")
+        self.set_internal_result("")
 
 
 if __name__ == "__main__":
     InquiryResponseApp().mainloop()
+
