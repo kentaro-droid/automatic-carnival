@@ -47,8 +47,12 @@ The initial screen contains fictional sample values.
 1. Keep the sample data as-is.
 2. Select `en` as the reply language.
 3. Click **Generate Draft**.
-4. Confirm that a reply and an internal verification checklist appear.
-5. Click **Copy to Clipboard** and paste the result into a blank text editor to confirm copying works.
+4. Confirm that the customer reply and internal checklist appear in separate panels.
+5. Enter a fictional internal note such as `INTERNAL TEST ONLY` and generate again.
+6. Click **Copy to Clipboard** and paste into a blank text editor. Only the customer reply (including its subject) should appear; no checklist, `Notes:`, or `INTERNAL TEST ONLY`.
+7. Edit the customer reply, then copy again and confirm that the edit is included.
+8. Repeat steps 3–7 with reply language `ja`, and again with empty internal notes.
+9. Click **Clear**. Both output panels should be empty; copying should prompt to generate a draft first.
 
 ## Pass criteria
 
@@ -58,7 +62,8 @@ The prototype passes the local test when all of the following are true:
 - English draft generation works.
 - Japanese draft generation works after changing the language to `ja`.
 - The internal verification checklist appears.
-- Copy to Clipboard works.
+- Copy to Clipboard includes only the editable customer reply in both languages.
+- Internal checklist and notes remain visible in the separate read-only panel.
 - No real personal or confidential data is used during the test.
 
 ## Troubleshooting
@@ -86,3 +91,4 @@ Read the displayed error message before making changes.
 ## Recommended next step
 
 After the local fictional-data test succeeds, change the repository to Private before considering any workflow involving real business data.
+
