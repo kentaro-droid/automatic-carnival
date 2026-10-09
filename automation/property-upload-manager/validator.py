@@ -37,6 +37,11 @@ def _blank(v):
     return v is None or (isinstance(v, str) and not v.strip())
 
 
+def normalize_property_id(value):
+    """Compare Excel numeric IDs and edited text IDs consistently."""
+    return "" if _blank(value) else str(value).strip()
+
+
 def _valid_url(v):
     if _blank(v):
         return False
@@ -49,7 +54,7 @@ def _valid_url(v):
 
 def validate_property(row: dict, duplicate_ids: set | None = None) -> list[Issue]:
     issues: list[Issue] = []
-    pid = row.get('物件ID')
+    pid = normalize_property_id(row.get('物件ID'))
     if _blank(pid):
         issues.append(Issue('ERROR','物件ID','ID_MISSING','物件IDが未入力です。'))
     elif duplicate_ids and pid in duplicate_ids:

@@ -22,9 +22,10 @@ def load_master(path: str):
     headers = {ws.cell(HEADER_ROW, c).value: c for c in range(1, ws.max_column + 1)}
     rows = []
     for r in range(DATA_START_ROW, ws.max_row + 1):
-        if ws.cell(r, headers['物件ID']).value in (None, ''):
-            continue
         values = {h: ws.cell(r, c).value for h, c in headers.items() if h}
+        # Ignore only empty records; zero and False are meaningful cell values.
+        if all(v is None or (isinstance(v, str) and not v.strip()) for v in values.values()):
+            continue
         rows.append({'excel_row': r, **values})
     wb.close()
     return rows, headers
