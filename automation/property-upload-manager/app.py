@@ -6,10 +6,10 @@ from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-from validator import validate_property, can_publish
+from validator import validate_property, can_publish, normalize_property_id
 from workbook_io import load_master, save_updates_preserving_validations
 
-EDITABLE_FIELDS = ['公開ステータス','優先度','物件名_日本語','物件名_英語','郵便番号','住所_日本語','住所_英語','物件種別','募集区分','取引態様','賃料_円','管理費_円','敷金_月','礼金_月','契約形態','契約期間_月','面積_㎡','間取り','築年月','入居可能日','空室状況','駐車場','ペット','説明_日本語','説明_英語','画像フォルダURL','間取図URL','リコー3Dツアー　リンク','入力担当','最終確認日','日英整合','業務確認','業務確認日','技術確認','技術確認日','公開承認','公開承認日','公開予定日','公開日','公開URL','備考']
+EDITABLE_FIELDS = ['物件ID','公開ステータス','優先度','物件名_日本語','物件名_英語','郵便番号','住所_日本語','住所_英語','物件種別','募集区分','取引態様','賃料_円','管理費_円','敷金_月','礼金_月','契約形態','契約期間_月','面積_㎡','間取り','築年月','入居可能日','空室状況','駐車場','ペット','説明_日本語','説明_英語','画像フォルダURL','間取図URL','リコー3Dツアー　リンク','入力担当','最終確認日','日英整合','業務確認','業務確認日','技術確認','技術確認日','公開承認','公開承認日','公開予定日','公開日','公開URL','備考']
 APPROVAL_FIELDS = ['業務確認','業務確認日','技術確認','技術確認日','公開承認','公開承認日']
 
 class App(tk.Tk):
@@ -47,12 +47,12 @@ class App(tk.Tk):
     def merged_row(self,row):
         data=dict(row); data.update(self.pending.get(row['excel_row'],{})); return data
     def duplicate_ids(self):
-        ids=[self.merged_row(r).get('物件ID') for r in self.rows]; c=Counter(ids); return {k for k,v in c.items() if k not in (None,'') and v>1}
+        ids=[normalize_property_id(self.merged_row(r).get('物件ID')) for r in self.rows]; c=Counter(ids); return {k for k,v in c.items() if k not in (None,'') and v>1}
     def populate_tree(self):
         for x in self.tree.get_children():self.tree.delete(x)
         dupes=self.duplicate_ids(); total_errors=0
         for r in self.rows:
-            d=self.merged_row(r); issues=validate_property(d,dupes); total_errors+=sum(i.severity=='ERROR' for i in issues); self.tree.insert('', 'end', iid=str(r['excel_row']), values=(d.get('物件ID'),d.get('物件名_日本語'),d.get('公開ステータス') or '',len(issues)))
+            d=self.merged_row(r); issues=validate_property(d,dupes); total_errors+=sum(i.severity=='ERROR' for i in issues); self.tree.insert('', 'end', iid=str(r['excel_row']), values=(d.get('物件ID') or f'未入力（Excel行{r["excel_row"]}）',d.get('物件名_日本語'),d.get('公開ステータス') or '',len(issues)))
         self.summary.config(text=f'{len(self.rows)}物件 / ERROR {total_errors}件')
     def on_select(self,_=None):
         sel=self.tree.selection();
@@ -81,7 +81,11 @@ class App(tk.Tk):
     def apply_form(self):
         if not self.current:return
         rownum=self.current['excel_row']; self.pending.setdefault(rownum,{})
-        for f,v in self.vars.items():self.pending[rownum][f]=self.parse(f,v.get())
+        data=self.merged_row(self.current)
+        for f,v in self.vars.items():
+            # Preserve unchanged Excel values (including numeric IDs and formulas).
+            if v.get() != self.display(data.get(f)):
+                self.pending[rownum][f]=self.parse(f,v.get())
         self.populate_tree(); self.refresh_validation(); messagebox.showinfo('反映','変更を一時反映しました。元Excelはまだ変更していません。')
     def load_approval(self):
         d=self.merged_row(self.current)
